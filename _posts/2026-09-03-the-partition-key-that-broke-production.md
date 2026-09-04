@@ -7,7 +7,6 @@ tags: [Distributed Systems, Database, System Design, Partition Key]
 excerpt: "How a single design decision in a document database can silently break your system under load — what partition keys actually do, why hot partitions happen, and how to design keys that scale."
 ---
 
-## The Scenario
 
 ## The Scenario
 
