@@ -1,0 +1,20 @@
+title: Engineering Notes
+description: Technical deep-dives on distributed systems, database internals, and backend architecture.
+author: Kishore
+
+url: "https://kishore712.github.io"
+baseurl: "/technical-blogs"
+
+markdown: kramdown
+highlighter: rouge
+permalink: /blog/:title/
+
+plugins:
+  - jekyll-seo-tag
+
+defaults:
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: "post"
