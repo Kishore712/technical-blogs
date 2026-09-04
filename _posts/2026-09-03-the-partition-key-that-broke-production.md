@@ -9,6 +9,8 @@ excerpt: "How a single design decision in a document database can silently break
 
 ## The Scenario
 
+## The Scenario
+
 Imagine you're running a multi-tenant SaaS platform. Thousands of customers share the same database infrastructure. Everything has been running smoothly for months.
 
 Then one night, something changes.
@@ -17,7 +19,7 @@ A handful of your biggest customers start running heavier workloads. Maybe they'
 
 And suddenly, things start breaking — but only for *some* users.
 
-Your biggest customers see requests timing out, responses taking 8+ seconds, and intermittent errors. Meanwhile, the rest of your customers are fine. Your monitoring dashboards show the overall system looks healthy. CPU is normal. Memory is fine. The service itself isn't crashing.
+Your biggest customers see requests timing out, responses taking in the range of few seconds, and intermittent errors. Meanwhile, the rest of your customers are fine. Your monitoring dashboards show the overall system looks healthy. CPU is normal. Memory is fine. The service itself isn't crashing.
 
 So what's going on?
 
@@ -290,5 +292,3 @@ Design for skew. Test with realistic load. Monitor at the partition level. And i
 The goal isn't a partition key that's clever. It's a partition key that lets everyone sleep.
 
 ---
-
-*This is Part 1 of a series on distributed database design at scale. Coming next: concurrency control beyond ETags, data isolation patterns, and zero-downtime data migrations.*
