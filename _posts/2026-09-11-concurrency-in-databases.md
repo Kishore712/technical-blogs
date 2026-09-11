@@ -35,7 +35,7 @@ This post covers what concurrency is, the specific problems it creates, and the 
 
 Concurrency means multiple operations are in progress at the same time, potentially accessing the same data.
 
-![Sequential vs concurrent access](images/01_what_is_concurrency.png)
+![Sequential vs concurrent access]({{ '/A-database/B2-Concurrency/images/01_what_is_concurrency.png' | relative_url }})
 
 In sequential access, one operation finishes before the next starts. Safe, but slow. In concurrent access, operations overlap — fast, but now they can interfere with each other.
 
@@ -55,7 +55,7 @@ Remove any one of these three, and the problem disappears.
 
 Two operations read the same value, both modify it, both write back. The second write overwrites the first. One change silently vanishes.
 
-![The lost update problem](images/02_lost_update.png)
+![The lost update problem]({{ '/A-database/B2-Concurrency/images/02_lost_update.png' | relative_url }})
 
 This is the most common and most dangerous concurrency bug — dangerous because it is completely silent.
 
@@ -65,7 +65,7 @@ This is the most common and most dangerous concurrency bug — dangerous because
 
 An operation reads data that another operation has written but not yet committed. If that other operation rolls back, the reader acted on data that was never committed.
 
-![Dirty read](images/03_dirty_read.png)
+![Dirty read]({{ '/A-database/B2-Concurrency/images/03_dirty_read.png' | relative_url }})
 
 **Example:** An admin starts a transaction to change a project from "private" to "public." The transaction writes the new visibility but hasn't committed yet — it's still updating ACL entries. A search indexer reads the project mid-transaction, sees "public," and indexes it for public search. The admin's transaction then rolls back because the ACL update failed. A private project now appears in public search results — the indexer read uncommitted data that never became real.
 
@@ -75,7 +75,7 @@ An operation reads data that another operation has written but not yet committed
 
 An operation reads the same data twice within one transaction and gets different results because another operation modified it in between.
 
-![Non-repeatable read](images/04_non_repeatable_read.png)
+![Non-repeatable read]({{ '/A-database/B2-Concurrency/images/04_non_repeatable_read.png' | relative_url }})
 
 ---
 
@@ -83,7 +83,7 @@ An operation reads the same data twice within one transaction and gets different
 
 Two operations each read the same data, make independent decisions that are individually valid, and write to different records. Together, they violate a constraint that neither broke alone.
 
-![Write skew](images/05_write_skew.png)
+![Write skew]({{ '/A-database/B2-Concurrency/images/05_write_skew.png' | relative_url }})
 
 Write skew is the hardest to detect because each operation, looked at in isolation, did nothing wrong.
 
@@ -95,7 +95,7 @@ There are two fundamental approaches. Each makes a different bet about how likel
 
 ### Pessimistic vs. Optimistic
 
-![Pessimistic vs optimistic concurrency](images/06_pessimistic_vs_optimistic.png)
+![Pessimistic vs optimistic concurrency]({{ '/A-database/B2-Concurrency/images/06_concurrency_type.png' | relative_url }})
 
 **Pessimistic (Locking)** assumes conflicts are likely. Lock the data before touching it. Nobody else can access it until you are done. Safe, but others wait.
 
@@ -107,7 +107,7 @@ There are two fundamental approaches. Each makes a different bet about how likel
 
 This is what ETags, conditional writes, and Compare-and-Swap (CAS) operations implement. The database gives you a version marker on read, and you pass it back on write as a condition.
 
-![Optimistic concurrency flow](images/07_optimistic_flow.png)
+![Optimistic concurrency flow]({{ '/A-database/B2-Concurrency/images/07_optimistic_concurrency.png' | relative_url }})
 
 If the version still matches, your write goes through. If someone else got there first, you get a conflict error and have to re-read and retry.
 
@@ -119,7 +119,7 @@ Cosmos DB, DynamoDB, MongoDB, and CouchDB all support this pattern.
 
 Instead of locking or rejecting, MVCC keeps multiple versions of each record. Each operation sees a consistent snapshot from when it started, regardless of what others are doing.
 
-![MVCC explained](images/08_mvcc.png)
+![MVCC explained]({{ '/A-database/B2-Concurrency/images/08_mvcc.png' | relative_url }})
 
 PostgreSQL, MySQL (InnoDB), Oracle, and CockroachDB use MVCC internally. It is the mechanism behind isolation levels like `SNAPSHOT` and `REPEATABLE READ`.
 
@@ -147,13 +147,13 @@ For most systems, optimistic concurrency is the right default. But it has specif
 
 When a single record attracts writes from many sources — user actions, background jobs, cleanup processes, API integrations — the conflict rate climbs. Each conflict triggers a re-read and retry. Retries create more contention than the original workload.
 
-![Multiple writers contention](images/09_multiple_writers.png)
+![Multiple writers contention]({{ '/A-database/B2-Concurrency/images/09_multiple_writers.png' | relative_url }})
 
 ### Not every failure deserves a retry
 
 When a write fails, the instinct is to retry. But retries are not always the right response. Classifying failures before deciding what to do avoids wasted work and retry storms.
 
-![Retry classification](images/10_retry_classification.png)
+![Retry classification]({{ '/A-database/B2-Concurrency/images/10_retry_classification.png' | relative_url }})
 
 ### Self-inflicted contention
 
@@ -179,7 +179,7 @@ When basic version checks are not enough:
 
 ## Choosing a Strategy
 
-![Concurrency decision framework](images/11_decision_framework.png)
+![Concurrency decision framework]({{ '/A-database/B2-Concurrency/images/11_decision_framework.png' | relative_url }})
 
 **Quick reference:**
 
