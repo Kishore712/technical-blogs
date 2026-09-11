@@ -38,7 +38,7 @@ A **partition key** is a field in your data that tells the database *where to ph
 
 Think of it like organizing a library.
 
-![Partition keys are like organizing a library](/technical-blogs/assets/images/posts/partition-key/01_bookshelf_analogy.png)
+![Partition keys are like organizing a library](/technical-blogs/A-database/B1-Partition-Key/images/01_bookshelf_analogy.png)
 
 Without a partition key, all your data goes into one big pile. Finding anything means scanning through everything. With a good partition key, the data is neatly organized on labeled shelves — and the database can go straight to the right shelf without searching.
 
@@ -61,7 +61,7 @@ Your partition key values create **logical partitions** — these are your data'
 
 Each physical partition has a **fixed throughput budget**. In Cosmos DB, this is measured in Request Units per second (RU/s). In DynamoDB, it's Read/Write Capacity Units. The concept is the same everywhere: each physical partition can only handle so much work per second.
 
-![How partition keys map to physical storage](/technical-blogs/assets/images/posts/partition-key/02_partition_mapping.png)
+![How partition keys map to physical storage](/technical-blogs/A-database/B1-Partition-Key/images/02_partition_mapping.png)
 
 Here's the critical insight:
 
@@ -85,7 +85,7 @@ But production traffic was not balanced.
 
 A handful of large tenants produced dramatically more write traffic than everyone else. Because the partition key didn't account for tenant identity, all of a big tenant's activity landed on whichever physical partitions happened to hold their data. Those partitions hit their throughput ceilings while other partitions sat mostly idle.
 
-![The hot partition problem](/technical-blogs/assets/images/posts/partition-key/03_hot_partition.png)
+![The hot partition problem](/technical-blogs/A-database/B1-Partition-Key/images/03_hot_partition.png)
 
 This is the **hot partition problem**, and it's one of the most common (and most painful) failure modes in distributed databases.
 
@@ -119,7 +119,7 @@ But the underlying distribution hasn't changed.
 
 The same tenants are still hitting the same partitions. The same imbalance is still there. You've just made it temporarily more expensive to be unbalanced.
 
-![Why adding more capacity doesn't fix a hot partition](/technical-blogs/assets/images/posts/partition-key/04_scaling_doesnt_help.png)
+![Why adding more capacity doesn't fix a hot partition](/technical-blogs/A-database/B1-Partition-Key/images/04_scaling_doesnt_help.png)
 
 Look at what happens: you doubled the total capacity (and doubled the cost), and yes, the hot partitions now fit within their budgets. But four of the six partitions are barely used. You're paying for capacity that's sitting idle because the traffic doesn't reach it.
 
@@ -145,7 +145,7 @@ All documents for a big tenant may hash to the same physical partition. One busy
 **Hierarchical key: `[tenant_id, sub_key]`**
 The tenant's data is first grouped by tenant (so tenant-scoped queries stay efficient), then subdivided within that tenant (so a big tenant's writes spread across multiple logical partitions).
 
-![Flat vs. hierarchical partition keys](/technical-blogs/assets/images/posts/partition-key/05_flat_vs_hierarchical.png)
+![Flat vs. hierarchical partition keys](/technical-blogs/A-database/B1-Partition-Key/images/05_flat_vs_hierarchical.png)
 
 ### Why this works
 
@@ -189,7 +189,7 @@ The goal of a good partition key isn't "no spikes." It's a system that absorbs s
 
 The partition key decision deserves more thought than most teams give it. Regardless of what kind of system you're building, the same core principles apply.
 
-![Partition key decision checklist](/technical-blogs/assets/images/posts/partition-key/07_decision_checklist.png)
+![Partition key decision checklist](/technical-blogs/A-database/B1-Partition-Key/images/07_decision_checklist.png)
 
 ### The three forces
 

@@ -1,4 +1,4 @@
-# Concurrency in Databases - What It Is, Why It Breaks Things, and How to Handle It
+# Concurrency in Databases — What It Is, Why It Breaks Things, and How to Handle It
 
 *Reading time: ~12 min*
 
@@ -10,9 +10,9 @@ Two API requests hit your service at the same time. Both read the same record. B
 
 Whose changes survive?
 
-If the system doesn't handle this, one write silently overwrites the other. No error, No warning, Just wrong data. This is the concurrency problem, and it shows up anywhere multiple processes can touch the same data at the same time.
+If the system doesn't handle this, one write silently overwrites the other. No error. No warning. Just wrong data. This is the concurrency problem, and it shows up anywhere multiple processes can touch the same data at the same time.
 
-This post covers what concurrency is, the specific problems it creates, and the strategies that exist to handle it.
+This post covers what concurrency is, the specific problems it creates, and the strategies that exist to handle it — with diagrams for every concept.
 
 ---
 
@@ -142,7 +142,7 @@ When a write fails, the instinct is to retry. But retries are not always the rig
 
 ### Self-inflicted contention
 
-If your system fans out too many parallel writes to the same data, you are not just experiencing contention, you are causing it. Capping parallelism intentionally often outperforms "fire everything at once."
+If your system fans out too many parallel writes to the same data, you are not just experiencing contention — you are causing it. Capping parallelism intentionally often outperforms "fire everything at once."
 
 ---
 
@@ -150,15 +150,15 @@ If your system fans out too many parallel writes to the same data, you are not j
 
 When basic version checks are not enough:
 
-**Chunk and retry**: break large batches into smaller independent chunks. Retries are scoped to the failed chunk, not the entire batch.
+**Chunk and retry** — break large batches into smaller independent chunks. Retries are scoped to the failed chunk, not the entire batch.
 
-**Reduce conflict surface**: smaller, targeted updates conflict less often than full document replacements. Touch only the fields you need.
+**Reduce conflict surface** — smaller, targeted updates conflict less often than full document replacements. Touch only the fields you need.
 
-**Cap concurrency**: set a maximum degree of parallelism for write operations. More concurrent writers does not always mean more throughput — past a point, it means more retries and worse tail latency.
+**Cap concurrency** — set a maximum degree of parallelism for write operations. More concurrent writers does not always mean more throughput — past a point, it means more retries and worse tail latency.
 
-**Tolerate asymmetry**: not every consistency edge needs synchronous enforcement. If a dangling reference does not break serving correctness and can be repaired later, defer it.
+**Tolerate asymmetry** — not every consistency edge needs synchronous enforcement. If a dangling reference does not break serving correctness and can be repaired later, defer it.
 
-**Match your consistency level**: strong consistency guarantees global ordering but costs latency. Session consistency gives you read-your-writes within a session at lower cost. Eventual consistency is cheapest but means readers may see stale data. Pick what matches your actual requirement, not the strongest one available.
+**Match your consistency level** — strong consistency guarantees global ordering but costs latency. Session consistency gives you read-your-writes within a session at lower cost. Eventual consistency is cheapest but means readers may see stale data. Pick what matches your actual requirement, not the strongest one available.
 
 ---
 
@@ -177,7 +177,8 @@ When basic version checks are not enough:
 | Low-value data, freshness over accuracy | Last-writer-wins |
 | Expensive or irreversible operations | Locking or serialization |
 
-The goal is not to eliminate conflicts. It is to build a system that handles them gracefully, matching the strategy to the workload shape, not the other way around.
+The goal is not to eliminate conflicts. It is to build a system that handles them gracefully — matching the strategy to the workload shape, not the other way around.
 
 ---
 
+*This is Part 2 of a series on database design at scale. Previously: [The Partition Key That Broke Production](/technical-blogs/blog/the-partition-key-that-broke-production/). Coming next: data isolation patterns and zero-downtime migrations.*
