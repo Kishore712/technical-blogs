@@ -1,7 +1,10 @@
-# Concurrency in Databases - What It Is, Why It Breaks Things, and How to Handle It
-
-*Reading time: ~12 min*
-
+---
+layout: post
+title: "Concurrency in Databases - What It Is, Why It Breaks Things, and How to Handle It"
+date: 2026-09-11
+reading_time: "12 min read"
+tags: [Databases, Concurrency, Distributed Systems, System Design]
+excerpt: "A practical guide to database concurrency, the problems it creates, and the strategies used to handle conflicts safely."
 ---
 
 ## The Scenario
