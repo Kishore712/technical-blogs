@@ -8,6 +8,7 @@ baseurl: "/technical-blogs"
 markdown: kramdown
 highlighter: rouge
 permalink: /blog/:title/
+future: true
 
 plugins:
   - jekyll-seo-tag

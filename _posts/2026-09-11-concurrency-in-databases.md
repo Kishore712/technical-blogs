@@ -1,7 +1,3 @@
-## The Scenario
-
-Two API requests hit your service at the same time...
-
 # Concurrency in Databases - What It Is, Why It Breaks Things, and How to Handle It
 
 *Reading time: ~12 min*
