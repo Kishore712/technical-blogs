@@ -4,16 +4,3 @@ _site/
 .jekyll-metadata
 Gemfile.lock
 .DS_Store
-
-# Local draft folders
-A-database/
-B-sandboxing/
-C-identity/
-D-agentic-patterns/
-E-responsible-ai/
-F-platform-engineering/
-G-building-from-scratch/
-
-# Leftover files
-excalidraw/
-images/
