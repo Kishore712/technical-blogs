@@ -5,6 +5,7 @@ Technical deep-dives on distributed systems, database internals, and backend arc
 ## Posts
 
 1. [The Partition Key That Broke Production](https://kishore712.github.io/technical-blogs/blog/the-partition-key-that-broke-production/)
+2. [Concurrency in Databases](https://kishore712.github.io/technical-blogs/blog/concurrency-in-databases/)
 
 ---
 
