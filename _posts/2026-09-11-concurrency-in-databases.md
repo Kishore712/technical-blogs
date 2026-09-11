@@ -1,3 +1,18 @@
+---
+layout: post
+title: "Concurrency in Databases - What It Is, Why It Breaks Things, and How to Handle It"
+date: 2026-09-11
+tags:
+  - Databases
+  - Concurrency
+  - Distributed Systems
+  - System Design
+---
+
+## The Scenario
+
+Two API requests hit your service at the same time...
+
 # Concurrency in Databases - What It Is, Why It Breaks Things, and How to Handle It
 
 *Reading time: ~12 min*
