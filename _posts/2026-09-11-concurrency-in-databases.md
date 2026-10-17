@@ -25,7 +25,7 @@ Concurrency means multiple operations are in progress at the same time, potentia
 
 ![Sequential vs concurrent access]({{ '/A-database/B2-Concurrency/images/01_what_is_concurrency.png' | relative_url }})
 
-In sequential access, one operation finishes before the next starts. Safe, but slow. In concurrent access, operations overlap — fast, but now they can interfere with each other.
+In sequential access, one operation finishes before the next starts. Safe, but slow. In concurrent access, operations overlap - fast, but now they can interfere with each other.
 
 Three conditions must all be true for a concurrency problem to occur:
 
@@ -45,7 +45,7 @@ Two operations read the same value, both modify it, both write back. The second 
 
 ![The lost update problem]({{ '/A-database/B2-Concurrency/images/02_lost_update.png' | relative_url }})
 
-This is the most common and most dangerous concurrency bug — dangerous because it is completely silent.
+This is the most common and most dangerous concurrency bug, dangerous because it is completely silent.
 
 ---
 
@@ -133,7 +133,7 @@ For most systems, optimistic concurrency is the right default. But it has specif
 
 ### Multiple writers with different intents
 
-When a single record attracts writes from many sources — user actions, background jobs, cleanup processes, API integrations — the conflict rate climbs. Each conflict triggers a re-read and retry. Retries create more contention than the original workload.
+When a single record attracts writes from many sources - user actions, background jobs, cleanup processes, API integrations - the conflict rate climbs. Each conflict triggers a re-read and retry. Retries create more contention than the original workload.
 
 ![Multiple writers contention]({{ '/A-database/B2-Concurrency/images/09_multiple_writers.png' | relative_url }})
 
@@ -157,7 +157,7 @@ When basic version checks are not enough:
 
 **Reduce conflict surface**: smaller, targeted updates conflict less often than full document replacements. Touch only the fields you need.
 
-**Cap concurrency**: set a maximum degree of parallelism for write operations. More concurrent writers does not always mean more throughput — past a point, it means more retries and worse tail latency.
+**Cap concurrency**: set a maximum degree of parallelism for write operations. More concurrent writers does not always mean more throughput, past a point, it means more retries and worse tail latency.
 
 **Tolerate asymmetry**: not every consistency edge needs synchronous enforcement. If a dangling reference does not break serving correctness and can be repaired later, defer it.
 
