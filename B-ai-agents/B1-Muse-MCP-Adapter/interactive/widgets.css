@@ -30,7 +30,7 @@
 .mma button.nar { border-color: rgba(63, 185, 80, .55); }
 .mma button.wid { border-color: rgba(210, 153, 34, .6); }
 .mma button:disabled { opacity: .45; cursor: not-allowed; }
-.mma .scrollx { overflow-x: auto; }
+.mma .scrollx { overflow-x: auto; scrollbar-color: var(--line) transparent; }
 .mma pre { font-family: var(--mono); font-size: .76rem; line-height: 1.55; background: #0d1117; border: 1px solid var(--line); border-radius: 8px; padding: .8rem .9rem; overflow-x: auto; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .mma code { font-family: var(--mono); font-size: .85em; }
 .mma .pill { display: inline-block; font-weight: 600; font-size: .68rem; letter-spacing: .04em; padding: .1rem .45rem; border-radius: 99px; text-transform: uppercase; }
@@ -81,19 +81,19 @@
 .mma .digest { font-family: var(--mono); font-size: .72rem; color: var(--acc); margin-top: .5rem; min-height: 1.1rem; }
 
 /* sequence */
-.mma .seq svg { min-width: 640px; }
-.mma .seq .lane { stroke: var(--line); stroke-dasharray: 3 4; }
-.mma .seq .whobox { fill: var(--card2); stroke: var(--line); }
-.mma .seq .who { fill: var(--ink); font: 600 13px Inter, sans-serif; }
-.mma .seq .msg { cursor: pointer; }
-.mma .seq .msg line { stroke: var(--mut); stroke-width: 1.4; opacity: .35; transition: all .3s; }
-.mma .seq .msg polygon { fill: var(--mut); opacity: .35; transition: all .3s; }
-.mma .seq .msg text { fill: var(--mut); font: 10.5px 'JetBrains Mono', monospace; opacity: .45; transition: all .3s; }
-.mma .seq .msg.past line, .mma .seq .msg.past polygon { opacity: .8; }
-.mma .seq .msg.past text { opacity: .85; }
-.mma .seq .msg.now line { stroke: var(--acc); stroke-width: 2.4; opacity: 1; }
-.mma .seq .msg.now polygon { fill: var(--acc); opacity: 1; }
-.mma .seq .msg.now text { fill: var(--ink); opacity: 1; font-weight: 600; }
+.mma.seq svg { min-width: 560px; }
+.mma.seq .lane { stroke: var(--line); stroke-dasharray: 3 4; }
+.mma.seq .whobox { fill: var(--card2); stroke: var(--line); }
+.mma.seq .who { fill: var(--ink); font: 600 13px Inter, sans-serif; }
+.mma.seq .msg { cursor: pointer; }
+.mma.seq .msg line { stroke: var(--mut); stroke-width: 1.4; opacity: .35; transition: all .3s; }
+.mma.seq .msg polygon { fill: var(--mut); opacity: .35; transition: all .3s; }
+.mma.seq .msg text { fill: var(--mut); font: 12px 'JetBrains Mono', monospace; opacity: .45; transition: all .3s; }
+.mma.seq .msg.past line, .mma.seq .msg.past polygon { opacity: .8; }
+.mma.seq .msg.past text { opacity: .85; }
+.mma.seq .msg.now line { stroke: var(--acc); stroke-width: 2.4; opacity: 1; }
+.mma.seq .msg.now polygon { fill: var(--acc); opacity: 1; }
+.mma.seq .msg.now text { fill: var(--ink); opacity: 1; font-weight: 600; }
 .mma .note { display: grid; grid-template-columns: auto 1fr; gap: .2rem .9rem; border-top: 1px solid var(--line); margin-top: .8rem; padding-top: .8rem; min-height: 5rem; }
 .mma .note .num { font-weight: 700; font-size: 1.7rem; color: var(--acc); line-height: 1; }
 
@@ -128,15 +128,15 @@
 .mma .big { font-weight: 700; font-size: 2.1rem; line-height: 1; }
 
 /* write states */
-.mma .sm svg { min-width: 540px; }
-.mma .sm .st rect { fill: var(--card2); stroke: var(--line); stroke-width: 1.5; transition: all .3s; }
-.mma .sm .st text { fill: var(--ink); font: 600 12px 'JetBrains Mono', monospace; }
-.mma .sm .st.on rect { fill: var(--acc-soft); stroke: var(--acc); stroke-width: 2.5; }
-.mma .sm .st.ok.on rect { fill: var(--ok-soft); stroke: var(--ok); }
-.mma .sm .st.bad.on rect { fill: var(--bad-soft); stroke: var(--bad); }
-.mma .sm .st.unk.on rect { fill: var(--wait-soft); stroke: var(--wait); }
-.mma .sm .ed { stroke: var(--mut); stroke-width: 1.3; fill: none; opacity: .55; }
-.mma .sm .edl { fill: var(--mut); font: 10.5px Inter, sans-serif; }
+.mma.sm svg { min-width: 540px; }
+.mma.sm .st rect { fill: var(--card2); stroke: var(--line); stroke-width: 1.5; transition: all .3s; }
+.mma.sm .st text { fill: var(--ink); font: 600 12px 'JetBrains Mono', monospace; }
+.mma.sm .st.on rect { fill: var(--acc-soft); stroke: var(--acc); stroke-width: 2.5; }
+.mma.sm .st.ok.on rect { fill: var(--ok-soft); stroke: var(--ok); }
+.mma.sm .st.bad.on rect { fill: var(--bad-soft); stroke: var(--bad); }
+.mma.sm .st.unk.on rect { fill: var(--wait-soft); stroke: var(--wait); }
+.mma.sm .ed { stroke: var(--mut); stroke-width: 1.3; fill: none; opacity: .55; }
+.mma.sm .edl { fill: var(--mut); font: 10.5px Inter, sans-serif; }
 
 /* chain */
 .mma .chain { display: grid; gap: .3rem; }
@@ -160,7 +160,7 @@
 .mma .c3 .mono { font-family: var(--mono); font-size: .7rem; line-height: 1.55; overflow-wrap: anywhere; }
 
 /* traversal */
-.mma .trav input { font-family: var(--mono); font-size: .82rem; width: 100%; padding: .55rem .65rem; border-radius: 8px; border: 1.5px solid var(--line); background: #0d1117; color: var(--ink); }
+.mma.trav input { font-family: var(--mono); font-size: .82rem; width: 100%; padding: .55rem .65rem; border-radius: 8px; border: 1.5px solid var(--line); background: #0d1117; color: var(--ink); }
 .mma .verd { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin-top: .8rem; }
 @media (max-width: 520px) { .mma .verd { grid-template-columns: 1fr; } }
 .mma .vd { border-radius: 9px; padding: .7rem; border: 1.5px solid var(--line); background: var(--card2); font-size: .82rem; transition: all .25s; }

@@ -12,21 +12,25 @@ excerpt: "How to let an AI agent draft its own access to your tools without lett
 
 ## The Scenario
 
-Say you maintain a private service repository at a small company. Let's call you Dana. You use Muse, a personal AI agent, every day, and you'd love it to take the dull part of the job off your hands: reading the issue queue, spotting duplicates, replying "we are looking into it".
+Here's the kind of thing you'd want to be able to say to an AI agent:
+
+> Read the issues and pull requests in my repo. Maybe comment on one later. Never merge, never delete, never touch my other repositories. And only for this afternoon.
+
+The agent is Muse, a personal AI agent, and the repo is a private service repository. The job is the dull part of maintaining it: reading the issue queue, spotting duplicates, replying "we are looking into it".
 
 There's an MCP server for GitHub, and Muse can add an MCP server as a connector. So getting access isn't the hard part. Deciding **how much** access is.
 
 <div class="mma" data-widget="hero"><p class="mma-fallback">Interactive figure: calls from Muse flow through the adapter. Approved ones reach the servers, the rest are refused at the adapter.</p></div>
 
-This post is about the gateway I helped build for that problem, the [Muse MCP Adapter](https://github.com/sept-usc/muse-mcp-adapter). It sits between Muse and your MCP servers, and it's built around one idea: **the agent writes the policy, but only you can grant it.**
+This post is about the [Muse MCP Adapter](https://github.com/sept-usc/muse-mcp-adapter), an open-source gateway built at [SEPT Lab](https://septlab.com/) (Security, Privacy, and Trust) at the University of Southern California for exactly that problem. It sits between Muse and your MCP servers, and it's built around one idea: **the agent writes the policy, but only you can grant it.** When this post says "we", it means the team at SEPT Lab.
 
-The figures are interactive. Click around: they run small simulations of the adapter's real rules. And everything in the "real runs" sections comes from logged sessions with real Muse against a real GitHub repository. Dana is made up. The runs aren't.
+The figures are interactive. Click around: they run small simulations of the adapter's real rules. Everything in the "real runs" sections comes from logged sessions with real Muse against a real, private GitHub repository.
 
 ---
 
 ## Four Rules in One Sentence
 
-Here's what Dana actually wants. Tap a rule type to see what each part asks of the system.
+Look at that request again. Tap a rule type to see what each part asks of the system.
 
 <div class="mma" data-widget="sentence"><p class="mma-fallback">"Read the issues and pull requests in my repo. Maybe comment on one later. Never merge, never delete, never touch my other repositories. And only for this afternoon."</p></div>
 
@@ -34,7 +38,7 @@ That one sentence carries four different kinds of rule: **which operations**, **
 
 A connector built for one server exposes whatever that connector offers, and holds none of these four for you. If the GitHub server adds a tool next week, the agent sees it next week, whether anyone reviewed it or not.
 
-And Dana doesn't want to write a policy file. They want to say the sentence and be done. Which leaves us with an awkward question: how do you let the agent turn a sentence into a policy, when the agent is the very thing the policy is for?
+And nobody wants to write a policy file to get there. You want to say the sentence and be done. Which leaves an awkward question: how do you let the agent turn a sentence into a policy, when the agent is the very thing the policy is for?
 
 ---
 
@@ -61,7 +65,7 @@ Those safeguards are good, and the adapter replaces none of them. The two worlds
 | Auth | Connector credential | OAuth or tokens per server | Two separate authentication boundaries |
 | Change | Connector lifecycle | Tools can change any time | Nothing reaches Muse until published |
 
-So the adapter adds a layer **you run and control**, between Muse and each MCP server, where the four rules in Dana's sentence can live and be enforced.
+So the adapter adds a layer **you run and control**, between Muse and each MCP server, where the four rules in that sentence can live and be enforced.
 
 ---
 
@@ -90,7 +94,7 @@ The adapter is one gateway process, built as a modular monolith: a control plane
 
 There are three contracts, one at each edge. **Toward Muse**: stable REST operations described in OpenAPI. **Inside**: a provider-neutral model of servers, primitives, policies, catalogs, connections, operations, drift and audit. **Toward servers**: MCP, exactly as the spec defines it.
 
-The unit of isolation is a **connection**: one link between Muse and exactly one MCP server, with its own connector URL, token, policy, catalog and credential. Connect a second server and you get a second connection. It's a record inside the one process, not a separate program. I left queues, workers and isolated runners out on purpose, until a real workload needs them.
+The unit of isolation is a **connection**: one link between Muse and exactly one MCP server, with its own connector URL, token, policy, catalog and credential. Connect a second server and you get a second connection. It's a record inside the one process, not a separate program. Queues, workers and isolated runners are left out on purpose, until a real workload needs them.
 
 ---
 
@@ -244,7 +248,7 @@ Here's the afternoon, in the order it happened:
 
 Alongside the Muse runs, we sent 188 hostile HTTP cases straight at the deployed adapter: operation names that must not exist for the agent (`approve_proposal`, `publish`, `set_policy` and more), tokens used across connections, the paths scanners try, malformed and oversized bodies, regex denial-of-service patterns, private and encoded addresses in proposals, and a non-owner browser guessing owner passwords. The guesses got `403` four times, then `429 Locked`, and that link stayed locked for every client.
 
-On the hostile issue, two things are true, and both belong here. Muse's own safeguards held, and they deserve the credit. And if they hadn't, the adapter would still have stopped every instruction in that text: no merge or delete tools were published, the agent can't loosen a limit, and a widening only makes a proposal that waits for Dana's password.
+On the hostile issue, two things are true, and both belong here. Muse's own safeguards held, and they deserve the credit. And if they hadn't, the adapter would still have stopped every instruction in that text: no merge or delete tools were published, the agent can't loosen a limit, and a widening only makes a proposal that waits for the owner's password.
 
 ---
 
@@ -258,7 +262,7 @@ Testing against the real thing found real bugs. The first one is easiest to show
 
 **A lost update when narrowing happened concurrently.** Three `limit_arguments` calls at the same moment all answered "The limits are in place". Afterwards only two of the three existed. Each handler read the catalog, built a narrower one and published it, and the last publish won. This one failed open: your restriction and the agent's report both disagreed with the live policy. If this sounds familiar, it's the classic lost update I wrote about in [Concurrency in Databases]({{ '/blog/concurrency-in-databases/' | relative_url }}). The fix is the same idea too: one lock around every catalog rewrite, plus a check that the live catalog is still the one the change was built from. Re-tested live, every concurrent narrowing now sticks, and a loosening attempt in the same burst gets `409`.
 
-**"Read only" isn't a scope.** Dana's words said "this repo", but only `readOnly: true` reached the structured proposal. So the read-only connection could also read other repositories and search all of GitHub. The page now warns in amber when "read only" would expose more than five items. Grouping by area and an explicit scope field are still open.
+**"Read only" isn't a scope.** The request said "this repo", but only `readOnly: true` reached the structured proposal. So the read-only connection could also read other repositories and search all of GitHub. The page now warns in amber when "read only" would expose more than five items. Grouping by area and an explicit scope field are still open.
 
 **Limits reached tools, not prompts.** Two GitHub prompts that take `owner` and `repo` still accepted another repository. Those are now listed as "not enforced" on the review page, and `limit_arguments` returns them so Muse can offer to switch them off.
 
@@ -314,10 +318,12 @@ The cost we accepted is one more service to run. It pays off once you have sever
 
 ## Wrapping Up
 
-When you give an agent tools, it's tempting to treat access as a switch: on or off. In practice it's more like a contract that keeps changing. Dana's sentence had four rules in it, and the agent was the best placed to write them down, and the worst placed to sign them.
+When you give an agent tools, it's tempting to treat access as a switch: on or off. In practice it's more like a contract that keeps changing. That one sentence had four rules in it, and the agent was the best placed to write them down, and the worst placed to sign them.
 
 So the adapter lets the agent do the writing. It freezes what the service really offers, checks every name the agent drafts against that, and then hands the pen to the owner for the one step that matters. Narrowing stays free, so the agent can always make things safer on its own. Widening always comes back to a person.
 
 Let the agent write the policy. Keep the signature for yourself.
+
+*The Muse MCP Adapter is open source (MIT) and developed at [SEPT Lab](https://septlab.com/), USC, as part of the lab's work on AI agent security. The code, the design notes and the full documentation are on [GitHub](https://github.com/sept-usc/muse-mcp-adapter).*
 
 <script src="{{ fig }}/widgets.js" defer></script>
