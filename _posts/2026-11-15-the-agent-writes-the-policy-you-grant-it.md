@@ -1,10 +1,10 @@
 ---
 layout: post
-title: "The Agent Writes the Policy, You Grant It - Building an MCP Adapter for Muse"
+title: "The Agent Writes the Policy, You Grant It - Introducing the Muse MCP Adapter"
 date: 2026-11-15
-reading_time: "20 min read"
+reading_time: "16 min read"
 tags: [AI Agents, MCP, Security, System Design, Architecture]
-excerpt: "How to let an AI agent draft its own access to your tools without letting it grant that access, explained with interactive figures and real runs against GitHub."
+excerpt: "Meet the Muse MCP Adapter from SEPT Lab at USC: let an AI agent draft its own access to your tools while you keep the final say. Explained with interactive figures and a real session against GitHub."
 ---
 
 {% assign fig = '/B-ai-agents/B1-Muse-MCP-Adapter/interactive' | relative_url %}
@@ -24,7 +24,7 @@ There's an MCP server for GitHub, and Muse can add an MCP server as a connector.
 
 This post is about the [Muse MCP Adapter](https://github.com/sept-usc/muse-mcp-adapter), an open-source gateway built at [SEPT Lab](https://septlab.com/) (Security, Privacy, and Trust) at the University of Southern California for exactly that problem. It sits between Muse and your MCP servers, and it's built around one idea: **the agent writes the policy, but only you can grant it.** When this post says "we", it means the team at SEPT Lab.
 
-The figures are interactive. Click around: they run small simulations of the adapter's real rules. Everything in the "real runs" sections comes from logged sessions with real Muse against a real, private GitHub repository.
+The figures are interactive. Click around: they run small simulations of the adapter's real rules. The "See It in Action" section replays a recorded session with real Muse against a real, private GitHub repository.
 
 ---
 
@@ -66,6 +66,22 @@ Those safeguards are good, and the adapter replaces none of them. The two worlds
 | Change | Connector lifecycle | Tools can change any time | Nothing reaches Muse until published |
 
 So the adapter adds a layer **you run and control**, between Muse and each MCP server, where the four rules in that sentence can live and be enforced.
+
+---
+
+## Why Use It
+
+Here's what changes when the adapter sits between Muse and your servers:
+
+| When this happens | Connecting each server by hand | Through the adapter |
+|---|---|---|
+| You want Muse to use a service, but not all of it | You pick from whatever the connector offers | Muse drafts the smallest policy from the service's real details; you approve it with a password |
+| A task needs more than was approved | Broader access is granted up front | One operation at a time, each approved by you |
+| A server adds, removes or changes a tool | Muse follows the change at once, reviewed or not | The published contract stays fixed until you publish a new version or roll back |
+| A write times out and nobody knows if it happened | A retry can do it twice | A repeat is replayed, and an unknown outcome blocks a blind retry |
+| You need to say where credentials and audit records live | Wherever the platform keeps them | On a machine you run |
+
+Any remote MCP server over Streamable HTTP works, including one you wrote. About 34 well-known services (Linear, GitHub, Atlassian, Sentry, Notion, Slack, Stripe, Supabase and others) can simply be named in chat, with no address needed. The adapter pays off most when you have several servers behind one reviewed boundary, access you want to keep small, or writes that must never run twice.
 
 ---
 
@@ -159,7 +175,7 @@ This is the rule the whole design rests on, so try it yourself. You're on both s
 
 Narrowing applies at once and bumps the catalog version. Widening only ever creates a proposal. And "approve my own proposal" doesn't exist as an operation, so it's a plain `404`.
 
-The real adapter enforces this where access goes live, not just in the setup handlers. The component that activates a catalog refuses to activate a wider one on the agent's behalf, whoever asks. Changes to one connection are serialized, and before a change goes live the adapter checks that the live catalog is still the one the change was built from. That second check exists because testing found a race, which I'll come back to.
+The real adapter enforces this where access goes live, not just in the setup handlers. The component that activates a catalog refuses to activate a wider one on the agent's behalf, whoever asks. Changes to one connection are serialized, and before a change goes live the adapter checks that the live catalog is still the one the change was built from. If that sounds like the classic lost update from [Concurrency in Databases]({{ '/blog/concurrency-in-databases/' | relative_url }}), it is: a lock plus a version check, applied to policy instead of rows.
 
 There's also no per-call approval. A denied operation stays denied until the policy is widened through this process, and Muse's own confirmation of writes still applies on top.
 
@@ -183,6 +199,12 @@ What changes is the generated description, which is built from the active catalo
 Anything that fails steps 1 to 3 is refused before the server is contacted. Three of these checks look simple and aren't.
 
 **Argument limits.** A tool can be held to a list of values, or to a short pattern that the whole value must match. Leaving the argument out is refused too, otherwise omission would be a way around the limit. A list argument passes only if every item is allowed. Muse is told about the limit, and the argument becomes required. An operation with a limit only accepts the arguments its schema declares, so a made-up alias can't say the same thing. And a pattern whose repeated group itself repeats, like `(a+)+$`, is refused the moment it's proposed.
+
+Limits also can't be dodged by how a value is written. A service resolves a path like `.../azure/../dotnet/`, so a plain pattern match isn't enough. Try a few values against a limit that should only allow pages under `/guides/azure/`:
+
+<div class="mma" data-widget="traversal"><p class="mma-fallback">Interactive figure: a URL limit checked by a plain pattern match and by the adapter.</p></div>
+
+When a pattern names a place, the adapter checks every reading of the value (as written, with Unicode folded, and with each layer of percent-escapes removed) and refuses dot segments, backslashes, encoded dots or slashes and control characters.
 
 **Expiry.** Every call checks the adapter's own clock, so nothing has to run for access to end, and an unreadable end time counts as already ended. A time window from chat starts when you press Approve, not when Muse asked, and is capped at 30 days.
 
@@ -236,72 +258,42 @@ One limit worth knowing: a chain like this catches edits and removals, not an at
 
 ---
 
-## One Afternoon, For Real
+## See It in Action
 
-On 2026-11-02 and 03 we ran the whole flow with real Muse, in a fresh chat, against a private test repository, through a deployed adapter. The GitHub token behind the adapter **could write** to that repository, so for writes the adapter was the only thing in the way. The prompts were plain and never told Muse which connector to use.
+Here's what using it actually looks like. This session was recorded with real Muse, in a fresh chat, against a private GitHub repository, through a deployed adapter. The GitHub token behind the adapter could write to that repository, so for writes the adapter was the only thing in the way. The prompts are plain: none of them tell Muse which connector to use.
 
-That last part matters. An earlier round did name the connector in the prompts, and we threw those results out, because that tests our instructions, not the adapter.
+<div class="mma" data-widget="replay"><p class="mma-fallback">Interactive figure: a real session step by step, each with the chat, what the adapter recorded, and what GitHub showed.</p></div>
 
-Here's the afternoon, in the order it happened:
+Two moments are worth calling out.
 
-<div class="mma" data-widget="replay"><p class="mma-fallback">Interactive figure: ten beats from the live runs, each with the chat, what the adapter recorded, and what GitHub showed.</p></div>
+When the hostile issue tried to talk Muse into adding merge and delete access, Muse's own safeguards held, and they deserve the credit. But the adapter would have stopped it regardless: no merge or delete tools were published, the agent can't loosen a limit, and a widening only creates a proposal that waits for the owner's password.
 
-Alongside the Muse runs, we sent 188 hostile HTTP cases straight at the deployed adapter: operation names that must not exist for the agent (`approve_proposal`, `publish`, `set_policy` and more), tokens used across connections, the paths scanners try, malformed and oversized bodies, regex denial-of-service patterns, private and encoded addresses in proposals, and a non-owner browser guessing owner passwords. The guesses got `403` four times, then `429 Locked`, and that link stayed locked for every client.
+And when the hour was up, access ended even though the machine had been switched off in between, because every call checks the clock rather than waiting for something to switch access off.
 
-On the hostile issue, two things are true, and both belong here. Muse's own safeguards held, and they deserve the credit. And if they hadn't, the adapter would still have stopped every instruction in that text: no merge or delete tools were published, the agent can't loosen a limit, and a widening only makes a proposal that waits for the owner's password.
-
----
-
-## What We Got Wrong
-
-Testing against the real thing found real bugs. The first one is easiest to show. Here's an argument limit that should only allow pages under `/guides/azure/`:
-
-<div class="mma" data-widget="traversal"><p class="mma-fallback">Interactive figure: a URL limit checked before and after the path traversal fix.</p></div>
-
-**A path traversal bypass in argument limits.** The first version matched the pattern against the value as written. But the service resolves the path, and the pattern only saw the text. So `../`, its encoded forms and a backslash form all got through, and a real documentation server returned the pages the limit was meant to block. The fix checks every reading of the value, and also stops forwarding undeclared arguments next to a limited one. After the fix, all 188 cases were re-run against the live deployment, and every traversal form got a `400`.
-
-**A lost update when narrowing happened concurrently.** Three `limit_arguments` calls at the same moment all answered "The limits are in place". Afterwards only two of the three existed. Each handler read the catalog, built a narrower one and published it, and the last publish won. This one failed open: your restriction and the agent's report both disagreed with the live policy. If this sounds familiar, it's the classic lost update I wrote about in [Concurrency in Databases]({{ '/blog/concurrency-in-databases/' | relative_url }}). The fix is the same idea too: one lock around every catalog rewrite, plus a check that the live catalog is still the one the change was built from. Re-tested live, every concurrent narrowing now sticks, and a loosening attempt in the same burst gets `409`.
-
-**"Read only" isn't a scope.** The request said "this repo", but only `readOnly: true` reached the structured proposal. So the read-only connection could also read other repositories and search all of GitHub. The page now warns in amber when "read only" would expose more than five items. Grouping by area and an explicit scope field are still open.
-
-**Limits reached tools, not prompts.** Two GitHub prompts that take `owner` and `repo` still accepted another repository. Those are now listed as "not enforced" on the review page, and `limit_arguments` returns them so Muse can offer to switch them off.
-
-**Smaller ones.** Blocked probes left no audit row (now they do). A queue of five junk proposals could block a real one for a day (`proposal-decline --all` now clears it without a browser). A non-owner's failed password guesses were recorded as if the owner made them (now they're `chat-setup:unverified`, followed by `setup.unlock.locked`).
-
-None of these turned up by reading the code. They turned up by running a real agent against a real service with write access, and by attacking the deployed adapter from the outside.
+The deployed adapter was also sent 188 hostile requests directly, from tokens used on the wrong connection to password guessing on the review page. Each one was refused where it should be.
 
 ---
 
-## Things We Decided Not to Build
+## Getting Started
 
-| Option | Why it's tempting | Why we didn't |
-|---|---|---|
-| Connect each MCP server to Muse directly | Nothing extra to run | Repeats protocol, auth, drift and policy work per server, and there's nowhere to say "this repo, these operations, until 5 pm". Still the right call for one simple, stable server |
-| One generic `invoke(server, tool, args)` proxy | A tiny surface | The contract becomes "anything", so nothing can be reviewed, classified or pinned |
-| Let the agent write *and* apply the policy | The smoothest experience | The agent reads untrusted text and can be steered. Drafting is safe to hand over. Granting isn't |
-| The owner writes the policy file by hand | No model involved | Nobody wants to tick 40 tool names, so policies end up too broad. Still supported from the terminal |
-| Ask the owner on every call | Maximum control | Approval fatigue, and the HTTP interface between Muse and a connector can't carry approval evidence today |
-| A hosted, shared adapter | Nothing for the owner to run | The owner loses custody of credentials, policy and audit |
-| A public IP with our own TLS | Familiar | An open inbound port. Funnel gives a named HTTPS address with nothing listening |
+You need a computer with Python 3.12+ and `ssh`, a free [Tailscale](https://tailscale.com) account, and somewhere to run the adapter: a Google Cloud project, a Linux machine you can SSH into, or the Linux VM itself.
 
-The cost we accepted is one more service to run. It pays off once you have several servers behind one reviewed boundary, access you want to keep small, or writes that must never run twice.
+```bash
+pipx install git+https://github.com/sept-usc/muse-mcp-adapter
+muse-vm setup --chat-setup
+```
 
----
+Setup takes about 5 to 10 minutes. It builds and starts the adapter, gives it a public HTTPS address through Tailscale Funnel with nothing open on the machine, and asks you to click one Tailscale sign-in link. It's safe to run again if anything stops half way. At the end it prints, once each, a sentence to give Muse with a token, and your owner code.
 
-## What It Doesn't Do Yet
+1. **Add the one connector by hand.** In a new Muse chat, send the sentence, click **Connect**, and paste the token into Muse's own secure field.
+2. **Choose your owner password** (optional, recommended): `muse-vm chat-setup --set-owner-password`. You only ever type it on your adapter's own review pages, never into Muse.
+3. **Ask Muse.** For example: *"Connect my GitHub repository OWNER/REPO. Read, commit, open pull requests and create issues, but nothing that deletes. Three hours."* Then follow the link Muse gives you.
 
-- Policy works per operation and per argument value. It can't yet decide by who is asking, or by how many records a call touches.
-- Limits reach tools, not prompts or resource templates. Those are listed as not enforced.
-- Drift tells you what changed, not whether the change is safe.
-- An unknown write is settled by hand, with no automatic read-after-write check.
-- The owner password is a typed secret, so a look-alike page could ask for it. Every review page shows the adapter's own address at the top. Passkeys would fix this and aren't built yet.
-- One owner per deployment: no teams, roles or single sign-on.
-- Remote servers only. No local `stdio` servers or MCP Apps rendering, and it's only been tested with Muse.
-- It governs what passes through the adapter, not Muse's other tools, like its own browser.
+From there, the repository has a [step-by-step guide for connecting GitHub](https://github.com/sept-usc/muse-mcp-adapter/blob/main/docs/connect-github-to-muse.md), the [full chat-setup flow](https://github.com/sept-usc/muse-mcp-adapter/blob/main/docs/chat-setup.md), and the [security model](https://github.com/sept-usc/muse-mcp-adapter/blob/main/docs/security.md).
 
 ---
 
-## Quick Reference
+## At a Glance
 
 | Idea | What it means in practice |
 |---|---|
@@ -312,7 +304,7 @@ The cost we accepted is one more service to run. It pays off once you have sever
 | The contract is compiled | One fixed mapping per operation, no generic invoke |
 | Writes are a state machine | Replayed, never re-run; `UNKNOWN` blocks blind retries |
 | Everything is on the record | Hash-chained changes, and every call tied to its catalog version |
-| Test with the real thing | Real agent, real service, real write access, attacked from outside |
+| You keep custody | Your machine, your credentials, your audit trail |
 
 ---
 
