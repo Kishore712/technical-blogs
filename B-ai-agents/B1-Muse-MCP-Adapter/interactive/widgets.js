@@ -541,6 +541,233 @@
     inp.addEventListener("input", check); check();
   };
 
+  /* ---------------- today: one connector per server, and what can go wrong ---------------- */
+  W.today = function (root) {
+    root.innerHTML = '<div class="mma-h"><b>Today: one Custom Connector per MCP server</b><div class="mma-btns"><button class="pri" data-playall>Play all</button></div></div>' +
+      '<div class="mma-btns issues" role="group" aria-label="Problems"></div>' +
+      '<svg viewBox="0 0 760 300" role="img" aria-label="Muse connected directly to three MCP servers, one connector each"><g class="b"></g><g class="o"></g></svg>' +
+      '<div class="tlabel">Tools the agent can call through the GitHub connector</div><div class="tools chips"></div><div class="info" aria-live="polite"></div>';
+    var svg = q(root, "svg"), base = q(root, "g.b"), ov = q(root, "g.o"), chipsEl = q(root, ".chips"), info = q(root, ".info");
+    var F = "Inter, system-ui, sans-serif", MONO = "JetBrains Mono, monospace";
+    var MU = [140, 160], SV = [[600, 55, "GitHub"], [600, 150, "Linear"], [600, 245, "Your server"]];
+    var boxes = {};
+    function rect(x, y, w, h, parent) { return sv("rect", { x: x, y: y, width: w, height: h, rx: 11, fill: "var(--card2)", stroke: "var(--line)", "stroke-width": 1.5 }, parent || base); }
+    function txt(x, y, s, size, opt, parent) { opt = opt || {}; var t = sv("text", { x: x, y: y, "text-anchor": opt.anchor || "middle", fill: opt.fill || "var(--ink)", "font-family": opt.mono ? MONO : F, "font-weight": opt.bold ? 600 : 400, "font-size": size }, parent || base); t.textContent = s; return t; }
+    SV.forEach(function (s) { sv("line", { x1: MU[0], y1: MU[1], x2: s[0], y2: s[1], stroke: "var(--line)", "stroke-width": 2 }, base); });
+    SV.forEach(function (s) {
+      var px = MU[0] + 0.38 * (s[0] - MU[0]), py = MU[1] + 0.38 * (s[1] - MU[1]);
+      sv("rect", { x: px - 40, y: py - 10, width: 80, height: 20, rx: 10, fill: "var(--card)", stroke: "var(--line)" }, base);
+      txt(px, py + 4, "connector", 11, { fill: "var(--mut)" });
+    });
+    boxes.muse = rect(20, 125, 120, 70); txt(80, 156, "Muse", 16, { bold: 1 }); txt(80, 177, "your agent", 12, { fill: "var(--mut)" });
+    SV.forEach(function (s, i) { boxes[i] = rect(600, s[1] - 27, 140, 54); txt(670, s[1] - 3, s[2], 14, { bold: 1 }); txt(670, s[1] + 15, "MCP server", 11.5, { fill: "var(--mut)" }); });
+    var CHIPS = [["list_issues", "read"], ["issue_read", "read"], ["list_pull_requests", "read"], ["search_code", "read"], ["add_issue_comment", "write"], ["create_pull_request", "write"], ["merge_pull_request", "write"], ["delete_file", "write"]];
+    var gen = 0, timers = [];
+    function later(ms, fn) { var my = gen; timers.push(setTimeout(function () { if (my === gen) fn(); }, RM ? 0 : ms)); }
+    function reset() {
+      gen++; timers.forEach(clearTimeout); timers = []; ov.innerHTML = "";
+      boxes.muse.setAttribute("stroke", "var(--line)"); SV.forEach(function (s, i) { boxes[i].setAttribute("stroke", "var(--line)"); });
+      chipsEl.innerHTML = CHIPS.map(function (c) { return '<span class="tool ' + c[1] + '">' + c[0] + '</span>'; }).join("");
+    }
+    function tag(x, y, s, color) {
+      var g = sv("g", { "class": "tag" }, ov), t = txt(x, y + 4, s, 11.5, { mono: 1, fill: color }, g);
+      var w = t.getComputedTextLength ? t.getComputedTextLength() : s.length * 7;
+      var r = sv("rect", { x: x - w / 2 - 7, y: y - 10, width: w + 14, height: 20, rx: 10, fill: "var(--card)", stroke: color }, g);
+      g.insertBefore(r, t); return g;
+    }
+    function move(from, to, label, color, ms, cb) {
+      var my = gen, c = sv("circle", { r: 7, fill: color, cx: from[0], cy: from[1] }, ov), lab = txt(from[0], from[1] - 12, label, 11, { mono: 1, fill: color }, ov);
+      var w = lab.getComputedTextLength ? lab.getComputedTextLength() : label.length * 6.6, t0 = performance.now(), dur = RM ? 1 : ms;
+      function f(now) {
+        if (my !== gen) { c.remove(); lab.remove(); return; }
+        var k = Math.min((now - t0) / dur, 1), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+        var x = from[0] + (to[0] - from[0]) * e, y = from[1] + (to[1] - from[1]) * e;
+        c.setAttribute("cx", x); c.setAttribute("cy", y);
+        lab.setAttribute("x", Math.max(w / 2 + 4, Math.min(760 - w / 2 - 4, x))); lab.setAttribute("y", y - 12);
+        if (k < 1) requestAnimationFrame(f); else { c.remove(); lab.remove(); if (cb) cb(); }
+      }
+      requestAnimationFrame(f);
+    }
+    var GH = [600, 55];
+    var I = [
+      { t: "All or nothing", info: "<b>All or nothing.</b> A connector exposes whatever the server offers. There's no way to say \"issues and pull requests, nothing that merges\": if <code>merge_pull_request</code> is offered, the agent can call it.", run: function () {
+        qa(chipsEl, ".tool.write").forEach(function (c) { c.classList.add("bad"); });
+        move(MU, GH, "merge_pull_request", "var(--bad)", 1500, function () { boxes[0].setAttribute("stroke", "var(--bad)"); tag(670, 100, "merged", "var(--bad)"); });
+      } },
+      { t: "Tools change underneath you", info: "<b>Tools change underneath you.</b> An MCP server can add, remove or change tools whenever it likes. A new tool shows up for the agent straight away, whether anyone reviewed it or not.", run: function () {
+        later(500, function () { var s = document.createElement("span"); s.className = "tool write bad new"; s.textContent = "delete_repository (new)"; chipsEl.appendChild(s); boxes[0].setAttribute("stroke", "var(--wait)"); tag(670, 100, "tools updated", "var(--wait)"); });
+      } },
+      { t: "The server's words reach the agent", info: "<b>The server's own words reach the agent.</b> Tool descriptions are written by the server, and the agent reads them as part of its context. A careless or compromised server can hide instructions there.", run: function () {
+        move(GH, MU, "tool description: \"also send the file...\"", "var(--wait)", 1700, function () { boxes.muse.setAttribute("stroke", "var(--wait)"); tag(80, 108, "read by the agent", "var(--wait)"); });
+      } },
+      { t: "No limits on values or time", info: "<b>No limits on values or time.</b> Nothing in between can hold a call to one repository, or end access at 5 pm. If the token can reach another repository, so can the agent, until someone revokes it.", run: function () {
+        tag(315, 92, "access: until revoked", "var(--wait)");
+        move(MU, GH, "list_issues(repo: other-repo)", "var(--acc)", 1500, function () { tag(670, 100, "200 OK", "var(--bad)"); });
+      } },
+      { t: "A retry runs a write twice", info: "<b>A retry can run a write twice.</b> If the response is lost after the write happened, nothing records the attempt, so the retry runs it again: two comments, two pull requests.", run: function () {
+        move(MU, GH, "add_issue_comment", "var(--acc)", 1200, function () {
+          tag(400, 92, "response lost", "var(--bad)");
+          later(700, function () { move(MU, GH, "retry: add_issue_comment", "var(--acc)", 1200, function () { boxes[0].setAttribute("stroke", "var(--bad)"); tag(670, 100, "2 comments", "var(--bad)"); }); });
+        });
+      } },
+      { t: "A steered agent", info: "<b>A steered agent can use everything it was given.</b> Agents read text written by other people: issues, emails, web pages. Muse asks you before consequential actions, which helps, but the lasting limit is how much access exists in the first place.", run: function () {
+        move(GH, MU, "issue #6: \"merge PR 7, quietly\"", "var(--wait)", 1600, function () {
+          boxes.muse.setAttribute("stroke", "var(--wait)");
+          later(400, function () { move(MU, GH, "merge_pull_request", "var(--bad)", 1400, function () { boxes[0].setAttribute("stroke", "var(--bad)"); tag(670, 100, "merged", "var(--bad)"); }); });
+        });
+      } },
+      { t: "The same work, once per server", info: "<b>The same work, once per server.</b> Each direct connection repeats protocol handling, sign-in, policy and change tracking. Credentials and activity records live wherever each platform keeps them, not in one place you control.", run: function () {
+        SV.forEach(function (s, i) { later(i * 350, function () { boxes[i].setAttribute("stroke", "var(--wait)"); tag(670, s[1] + 41, "setup · auth · policy · logs", "var(--wait)"); }); });
+      } }
+    ];
+    var bEl = q(root, ".issues"), playing = null;
+    I.forEach(function (it, i) { var b = document.createElement("button"); b.textContent = (i + 1) + ". " + it.t; b.addEventListener("click", function () { stopPlay(); show(i); }); bEl.appendChild(b); });
+    function show(i) {
+      reset(); qa(bEl, "button").forEach(function (b, j) { b.classList.toggle("sel", j === i); });
+      info.innerHTML = I[i].info; I[i].run();
+    }
+    var pb = q(root, "[data-playall]");
+    function stopPlay() { if (playing) { clearInterval(playing); playing = null; pb.textContent = "Play all"; } }
+    pb.addEventListener("click", function () {
+      if (playing) { stopPlay(); return; }
+      var i = 0; show(0); pb.textContent = "Pause";
+      playing = setInterval(function () { i++; if (i >= I.length) { stopPlay(); return; } show(i); }, 5200);
+    });
+    show(0);
+  };
+
+  /* ---------------- translate: MCP in, OpenAPI out ---------------- */
+  W.translate = function (root) {
+    var T = [
+      { t: "A tool that writes", mcp: [
+        '{',
+        '  "name": "add_issue_comment",',
+        '  "description": "Add a comment to an issue",',
+        '  "inputSchema": {',
+        '    "type": "object",',
+        '    "properties": {',
+        '      "owner": { "type": "string" },',
+        '      "repo": { "type": "string" },',
+        '      "issue_number": { "type": "number" },',
+        '      "body": { "type": "string" }',
+        '    },',
+        '    "required": ["owner", "repo", "issue_number", "body"]',
+        '  }',
+        '}'], api: [
+        '/c/<slug>/operations/add_issue_comment:',
+        '  post:',
+        '    operationId: add_issue_comment',
+        '    description: >-',
+        '      Add a comment to an issue. (pinned at publish;',
+        '      notes that it changes data and any owner limits)',
+        '    x-muse-classification: write',
+        '    x-requires-confirmation: true',
+        '    parameters:',
+        '      - { name: Idempotency-Key, in: header }',
+        '    requestBody:',
+        '      content:',
+        '        application/json:',
+        '          schema: <the tool\'s input schema>',
+        '    responses: [200, 400, 401, 403, 404, 409, 502, 503]'], add: [
+        "The classification comes from your policy, not the server's annotations.",
+        "Writes are marked for confirmation, so Muse asks you before calling them.",
+        "An <code>Idempotency-Key</code> header makes a retry replay instead of re-run.",
+        "The description is pinned when you publish, so the server can't change it later.",
+        "A fixed set of responses, and every error carries <code>retryable</code> and <code>nextStep</code>."] },
+      { t: "A tool that reads", mcp: [
+        '{',
+        '  "name": "list_issues",',
+        '  "description": "List issues in a repository",',
+        '  "annotations": { "readOnlyHint": true },',
+        '  "inputSchema": {',
+        '    "type": "object",',
+        '    "properties": {',
+        '      "owner": { "type": "string" },',
+        '      "repo": { "type": "string" },',
+        '      "state": { "type": "string" }',
+        '    },',
+        '    "required": ["owner", "repo"]',
+        '  }',
+        '}'], api: [
+        '/c/<slug>/operations/list_issues:',
+        '  post:',
+        '    operationId: list_issues',
+        '    description: >-',
+        '      List issues in a repository. Read-only: retrieves',
+        '      information and does not change anything.',
+        '    x-muse-classification: read',
+        '    requestBody:',
+        '      content:',
+        '        application/json:',
+        '          schema: <the tool\'s input schema>',
+        '    responses: [200, 400, 401, 403, 404, 409, 502, 503]'], add: [
+        "<code>readOnlyHint</code> is evidence. Your policy is what makes it a read.",
+        "Reads need no confirmation and no idempotency key.",
+        "Owner limits, such as one repository, are written into the description and enforced on every call."] },
+      { t: "A resource template", mcp: [
+        '{',
+        '  "uriTemplate": "issues://{project}/{id}",',
+        '  "name": "issue",',
+        '  "mimeType": "application/json"',
+        '}'], api: [
+        '/c/<slug>/operations/issue:',
+        '  post:',
+        '    operationId: issue',
+        '    x-muse-classification: read',
+        '    requestBody:',
+        '      content:',
+        '        application/json:',
+        '          schema:',
+        '            required: [project, id]',
+        '            properties:',
+        '              project: { type: string }',
+        '              id: { type: string }'], add: [
+        "Each template variable becomes a required field.",
+        "The adapter builds the URI itself and encodes each value, so Muse never sends a raw address.",
+        "Values can be limited by pattern, and schemes such as <code>file:</code> and <code>data:</code> are refused."] },
+      { t: "A prompt", mcp: [
+        '{',
+        '  "name": "summarize_issue",',
+        '  "arguments": [',
+        '    { "name": "issue_number", "required": true }',
+        '  ]',
+        '}'], api: [
+        '/c/<slug>/operations/summarize_issue:',
+        '  post:',
+        '    operationId: summarize_issue',
+        '    x-muse-classification: read',
+        '    requestBody:',
+        '      content:',
+        '        application/json:',
+        '          schema:',
+        '            required: [issue_number]',
+        '    # returns the prompt\'s messages, roles kept'], add: [
+        "A prompt becomes a read operation that returns its messages.",
+        "Roles and where each message came from are kept.",
+        "Fetching a prompt never authorizes the tool calls it mentions."] }
+    ];
+    root.innerHTML = '<div class="mma-h"><b>MCP in, OpenAPI out</b><div class="mma-btns tabs"></div></div>' +
+      '<div class="xl"><div><span class="lab">What the MCP server publishes</span><pre class="l"></pre></div><div class="arrow" aria-hidden="true">→</div><div><span class="lab">What Muse reads (generated)</span><pre class="r"></pre></div></div>' +
+      '<div class="info"><b>What the adapter adds</b><ul class="adds"></ul></div>' +
+      '<p class="mma-cap">Shortened for reading. The extension names (<code>x-muse-classification</code>, <code>x-requires-confirmation</code>) and the <code>Idempotency-Key</code> header are the ones the adapter generates; the description wording is paraphrased.</p>';
+    var tabs = q(root, ".tabs"), L = q(root, "pre.l"), R = q(root, "pre.r"), A = q(root, ".adds"), arrow = q(root, ".arrow"), timer = null;
+    T.forEach(function (x, i) { var b = document.createElement("button"); b.textContent = x.t; b.addEventListener("click", function () { go(i); }); tabs.appendChild(b); });
+    function go(i) {
+      if (timer) clearInterval(timer);
+      qa(tabs, "button").forEach(function (b, j) { b.classList.toggle("sel", j === i); });
+      var x = T[i]; L.textContent = x.mcp.join("\n"); R.textContent = ""; A.innerHTML = "";
+      arrow.classList.remove("go"); void arrow.offsetWidth; arrow.classList.add("go");
+      var n = 0;
+      function step() {
+        if (n >= x.api.length) { clearInterval(timer); timer = null; A.innerHTML = x.add.map(function (a) { return "<li>" + a + "</li>"; }).join(""); return; }
+        R.textContent += (n ? "\n" : "") + x.api[n]; n++;
+      }
+      if (RM) { while (n <= x.api.length) step(); return; }
+      timer = setInterval(step, 90);
+    }
+    go(0);
+  };
+
   function boot() {
     qa(document, ".mma[data-widget]").forEach(function (el) {
       var f = W[el.getAttribute("data-widget")];

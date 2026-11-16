@@ -175,3 +175,21 @@
   .post-content table { display: block; overflow-x: auto; }
   .post-content td code { white-space: normal; overflow-wrap: anywhere; }
 }
+
+/* today: the direct setup and its problems */
+.mma .issues { margin-bottom: .6rem; }
+.mma .tlabel { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--mut); margin: .6rem 0 .35rem; }
+.mma .tool.bad { border-color: var(--bad); background: var(--bad-soft); color: var(--bad); }
+.mma .tool.new { animation: mma-pop .45s ease; }
+
+/* translate: MCP in, OpenAPI out */
+.mma .xl { display: grid; grid-template-columns: 1fr; gap: .4rem; }
+.mma .xl > div { min-width: 0; }
+.mma .xl .lab { display: block; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--mut); margin-bottom: .35rem; }
+.mma .xl pre { white-space: pre; overflow-wrap: normal; overflow-x: auto; font-size: .74rem; }
+.mma .xl pre.r { min-height: 12rem; }
+.mma .xl .arrow { justify-self: center; font-size: 1.5rem; line-height: 1; color: var(--acc); transform: rotate(90deg); }
+.mma .xl .arrow.go { animation: mma-slide .6s ease; }
+@keyframes mma-slide { from { transform: rotate(90deg) translateX(-8px); opacity: .2 } to { transform: rotate(90deg); opacity: 1 } }
+.mma .adds { margin: .4rem 0 0 1.1rem; padding: 0; }
+.mma .adds li { margin-bottom: .25rem; animation: mma-pop .3s ease; }
