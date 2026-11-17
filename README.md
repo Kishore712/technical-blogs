@@ -7,7 +7,7 @@ Technical deep-dives on distributed systems, database internals, and backend arc
 1. [The Partition Key That Broke Production](https://kishore712.github.io/technical-blogs/blog/the-partition-key-that-broke-production/)
 2. [Concurrency in Databases](https://kishore712.github.io/technical-blogs/blog/concurrency-in-databases/)
 3. [Sharing Infrastructure Without Sharing Data](https://kishore712.github.io/technical-blogs/blog/sharing-infrastructure-without-sharing-data/)
-4. [The Agent Writes the Policy, You Grant It](https://kishore712.github.io/technical-blogs/blog/the-agent-writes-the-policy-you-grant-it/)
+4. [Muse MCP Adapter: Connect Your Tools, Control the Access](https://kishore712.github.io/technical-blogs/blog/the-agent-writes-the-policy-you-grant-it/)
 
 ---
 

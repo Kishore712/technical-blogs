@@ -193,3 +193,14 @@
 @keyframes mma-slide { from { transform: rotate(90deg) translateX(-8px); opacity: .2 } to { transform: rotate(90deg); opacity: 1 } }
 .mma .adds { margin: .4rem 0 0 1.1rem; padding: 0; }
 .mma .adds li { margin-bottom: .25rem; animation: mma-pop .3s ease; }
+
+/* Keep the original figures usable at narrow widths. */
+.mma .resp > *, .mma .two > *, .mma .op > span { min-width: 0; }
+.mma .op > span { overflow-wrap: anywhere; }
+.mma .op small { flex-shrink: 0; max-width: 48%; overflow-wrap: anywhere; }
+.mma .mma-h code { overflow-wrap: anywhere; }
+@media (max-width: 380px) {
+  .mma { padding: .8rem; }
+  .mma .two { grid-template-columns: 1fr; }
+  .mma .gate { overflow-wrap: anywhere; }
+}
